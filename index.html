@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ứng Dụng Luyện Phát Âm Tiếng Trung Thông Minh</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #ece9e6, #ffffff);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+            width: 100%;
+            max-width: 650px;
+            border: 1px solid #e1e8ed;
+        }
+
+        h1 {
+            text-align: center;
+            color: #d32f2f;
+            margin-bottom: 5px;
+            font-size: 26px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        textarea {
+            width: 100%;
+            height: 90px;
+            padding: 12px;
+            border: 2px solid #bdc3c7;
+            border-radius: 10px;
+            resize: none;
+            font-size: 20px;
+            transition: all 0.3s;
+        }
+
+        textarea:focus {
+            border-color: #d32f2f;
+            outline: none;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-speak { background-color: #3498db; color: white; }
+        .btn-speak:hover { background-color: #2980b9; }
+
+        .btn-record { background-color: #e74c3c; color: white; }
+        .btn-record:hover { background-color: #c0392b; }
+        .btn-record.recording {
+            animation: pulse 1.5s infinite;
+            background-color: #962d22;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.97); box-shadow: 0 0 0 10px rgba(231, 76, 60, 0.2); }
+            100% { transform: scale(1); }
+        }
+
+        .info-panel {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px dashed #bdc3c7;
+        }
+
+        .status {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .transcript-box {
+            font-size: 18px;
+            color: #16a085;
+            font-weight: bold;
+            min-height: 25px;
+            margin-top: 5px;
+        }
+
+        .feedback {
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+            display: none;
+            margin-bottom: 20px;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .command-trigger { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+
+        /* Phần cài đặt câu lệnh điều khiển */
+        .command-settings {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+            border-top: 3px solid #f1c40f;
+        }
+        .command-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .command-item input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🇨🇳 Luyện Phát Âm Tiếng Trung Thông Minh</h1>
+    <div class="subtitle">Hỗ trợ nhận diện câu lệnh bằng giọng nói điều khiển ứng dụng</div>
+    
+    <!-- Ô nhập văn bản mẫu -->
+    <div class="form-group">
+        <label for="text-input">Nhập câu tiếng Trung cần luyện:</label>
+        <textarea id="text-input" placeholder="Ví dụ: 🌟 很高兴认识你 (Rất vui được quen biết bạn)"></textarea>
+    </div>
+
+    <!-- Nút bấm thủ công -->
+    <div class="button-group">
+        <button id="speak-btn" class="btn-speak">🔊 1. Nghe Máy Đọc</button>
+        <button id="record-btn" class="btn-record">🎙️ 2. Bật Mic Đọc Thử</button>
+    </div>
+
+    <!-- Bảng hiển thị kết quả xử lý từ Mic -->
+    <div class="info-panel">
+        <div class="status" id="status-text">Trạng thái: Sẵn sàng</div>
+        <div style="font-size: 13px; color: #7f8c8d;">Thiết bị nghe được:</div>
+        <div class="transcript-box" id="transcript-text">...</div>
+    </div>
+
+    <!-- Khối thông báo kết quả Đúng / Sai / Lệnh -->
+    <div class="feedback" id="feedback-box"></div>
+
+    <!-- Khu vực Tự cài đặt câu lệnh thông minh -->
+    <div class="command-settings">
+        <label>⚙️ Tự thiết lập Câu lệnh bằng giọng nói (Tiếng Trung):</label>
+        <div style="font-size: 12px; color: #7f8c8d; margin-bottom: 10px;">
+            Khi bạn đang bật Mic, nếu đọc các từ khoá dưới đây, ứng dụng sẽ tự thực thi hành động tương ứng.
+        </div>
+        <div class="command-list">
+            <div class="command-item">
+                <span style="font-size:13px; color:#555;">Hành động: <b>Đọc mẫu lại</b></span>
+                <input type="text" id="cmd-speak" value="朗读">
+            </div>
+            <div class="command-item">
+                <span style="font-size:13px; color:#555;">Hành động: <b>Xoá sạch chữ</b></span>
+                <input type="text" id="cmd-clear" value="清除">
+            </div>
+            <div class="command-item">
+                <span style="font-size:13px; color:#555;">Hành động: <b>Gợi ý câu mới</b></span>
+                <input type="text" id="cmd-suggest" value="下一个">
+            </div>
+            <div class="command-item">
+                <span style="font-size:13px; color:#555;">Hành động: <b>Tắt Mic</b></span>
+                <input type="text" id="cmd-stop" value="停止">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- KHỞI TẠO CÁC ĐỐI TƯỢNG API ---
+    const synth = window.speechSynthesis;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    const textInput = document.getElementById('text-input');
+    const speakBtn = document.getElementById('speak-btn');
+    const recordBtn = document.getElementById('record-btn');
+    const statusText = document.getElementById('status-text');
+    const transcriptText = document.getElementById('transcript-text');
+    const feedbackBox = document.getElementById('feedback-box');
+
+    // Các câu tiếng Trung ngẫu nhiên để gợi ý
+    const sampleSentences = [
+        "你今天怎么样？",
+        "我想去中国旅游。",
+        "学汉语非常有趣。",
+        "祝你 birthday 快乐，不对，祝你生日快乐！",
+        "请问，洗手间在哪儿？"
+    ];
+
+    // --- 1. CHỨC NĂNG PHÁT ÂM MẪU (TEXT-TO-SPEECH) ---
+    function playSampleAudio() {
+        if (synth.speaking) synth.cancel();
+
+        let text = textInput.value.trim();
+        if (!text) {
+            text = "你好";
+            textInput.value = text;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'zh-CN'; 
+        utterance.rate = 0.85; // Đọc hơi chậm một chút để người học dễ nghe âm điệu
+        synth.speak(utterance);
+    }
+    speakBtn.addEventListener('click', playSampleAudio);
+
+
+    // --- 2. CHỨC NĂNG NHẬN DIỆN GIỌNG NÓI & XỬ LÝ LỆNH ---
+    if (!SpeechRecognition) {
+        alert("Trình duyệt của bạn quá cũ hoặc không hỗ trợ API Nhận diện giọng nói. Hãy dùng Google Chrome!");
+    } else {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'zh-CN';       // Lắng nghe tiếng Trung Quốc
+        recognition.continuous = false;   // Nói xong 1 câu tự dừng
+        recognition.interimResults = false; // Chỉ lấy kết quả chính xác cuối cùng
+
+        let isRecording = false;
+
+        recordBtn.addEventListener('click', () => {
+            if (!isRecording) recognition.start();
+            else recognition.stop();
+        });
+
+        recognition.onstart = () => {
+            isRecording = true;
+            recordBtn.textContent = "🛑 Đang nghe... Hãy đọc câu trên hoặc Đọc lệnh!";
+            recordBtn.classList.add('recording');
+            statusText.textContent = "Trạng thái: Microphone đang mở...";
+            feedbackBox.style.display = 'none';
+            transcriptText.textContent = "...";
+        };
+
+        recognition.onend = () => {
+            isRecording = false;
+            recordBtn.textContent = "🎙️ 2. Bật Mic Đọc Thử";
+            recordBtn.classList.remove('recording');
+            statusText.textContent = "Trạng thái: Mic đã đóng.";
+        };
+
+        recognition.onresult = (event) => {
+            const resultText = event.results[0][0].transcript;
+            transcriptText.textContent = resultText;
+            feedbackBox.style.display = 'block';
+
+            // Làm sạch chuỗi (Bỏ khoảng trắng và dấu câu để đối chiếu chuẩn xác)
+            const cleanResult = resultText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()？。，！、]/g,"").replace(/\s+/g,"");
+            
+            // Lấy các giá trị câu lệnh hiện tại từ các ô input cài đặt
+            const cmdSpeakVal = document.getElementById('cmd-speak').value.trim();
+            const cmdClearVal = document.getElementById('cmd-clear').value.trim();
+            const cmdSuggestVal = document.getElementById('cmd-suggest').value.trim();
+            const cmdStopVal = document.getElementById('cmd-stop').value.trim();
+
+            // --- KIỂM TRA XEM CÓ KHỚP VỚI CÂU LỆNH NÀO KHÔNG ---
+            if (cleanResult === cmdSpeakVal && cmdSpeakVal !== "") {
+                feedbackBox.textContent = `⚡ Kích hoạt câu lệnh: [${cmdSpeakVal}] -> Đang đọc mẫu lại...`;
+                feedbackBox.className = "feedback command-trigger";
+                setTimeout(() => { playSampleAudio(); }, 600);
+                return;
+            } 
+            
+            if (cleanResult === cmdClearVal && cmdClearVal !== "") {
+                feedbackBox.textContent = `⚡ Kích hoạt câu lệnh: [${cmdClearVal}] -> Đã xoá bảng chữ.`;
+                feedbackBox.className = "feedback command-trigger";
+                textInput.value = "";
+                return;
+            }
+
+            if (cleanResult === cmdSuggestVal && cmdSuggestVal !== "") {
+                const randomSentence = sampleSentences[Math.floor(Math.random() * sampleSentences.length)];
+                feedbackBox.textContent = `⚡ Kích hoạt câu lệnh: [${cmdSuggestVal}] -> Đã đổi câu ngẫu nhiên mới.`;
+                feedbackBox.className = "feedback command-trigger";
+                textInput.value = randomSentence;
+                return;
+            }
+
+            if (cleanResult === cmdStopVal && cmdStopVal !== "") {
+                feedbackBox.textContent = `⚡ Kích hoạt câu lệnh: [${cmdStopVal}] -> Đã tắt mic ngay lập tức.`;
+                feedbackBox.className = "feedback command-trigger";
+                recognition.stop();
+                return;
+            }
+
+            // --- NẾU KHÔNG PHẢI LỆNH -> TIẾN HÀNH CHẤM ĐIỂM PHÁT ÂM CÂU MẪU ---
+            const cleanOriginal = textInput.value.trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()？。，！、]/g,"").replace(/\s+/g,"");
+
+            if (cleanOriginal === "") {
+                feedbackBox.textContent = "ℹ️ Ô nhập văn bản đang trống, hãy gõ câu gì đó trước khi đọc nhé.";
+                feedbackBox.className = "feedback error";
+                return;
+            }
+
+            if (cleanResult === cleanOriginal) {
+                feedbackBox.textContent = "🎉 太棒了! (Tuyệt vời!) Bạn phát âm chuẩn xác 100%.";
+                feedbackBox.className = "feedback success";
+            } else {
+                feedbackBox.textContent = "❌ Phát âm chưa khớp! Bạn hãy bấm nghe lại máy đọc rồi thử lại nhé.";
+                feedbackBox.className = "feedback error";
+            }
+        };
+
+        recognition.onerror = (event) => {
+            statusText.textContent = "Trạng thái: Gặp lỗi nhận diện.";
+            if(event.error === 'not-allowed') {
+                alert('Vui lòng cho phép quyền truy cập Microphone trên trình duyệt.');
+            }
+        };
+    }
+</script>
+
+</body>
+</html>
